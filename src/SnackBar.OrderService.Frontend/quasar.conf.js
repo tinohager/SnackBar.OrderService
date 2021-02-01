@@ -85,6 +85,12 @@ module.exports = function (/* ctx */) {
           target: 'https://localhost:5001',
           secure: false,
           changeOrigin: true
+        },
+        '/hub': {
+          target: 'https://localhost:5001',
+          ws: true,
+          secure: false,
+          changeOrigin: true
         }
       }
     },
@@ -108,7 +114,7 @@ module.exports = function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: ['Notify']
     },
 
     // animations: 'all', // --- includes all animations

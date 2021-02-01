@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace SnackBar.OrderService.WebApi.Hubs
 {
-    public class SnackBarHub : Hub
+    public class OrderHub : Hub
     {
         public override async Task OnConnectedAsync()
         {

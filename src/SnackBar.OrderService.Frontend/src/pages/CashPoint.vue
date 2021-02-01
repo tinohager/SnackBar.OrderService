@@ -1,29 +1,31 @@
 <template>
   <q-page padding>
-    Connection: {{ connection.connectionState }}<br>
+    <h1>CashPoint</h1>
+    <ConnectionStatusBar
+      v-if="connection"
+      :connection.sync="connection"
+    />
 
     <div class="row">
-      <div class="col-6 flex">
-        <div
+      <div class="col-6 q-pa-md q-gutter-sm">
+        <span
           v-for="article in articles"
           :key="article.id"
         >
-          <div>
-            <q-btn
-              outline
-              padding="lg"
-              class="q-mr-sm"
-              :icon="article.icon"
-              :label="article.name"
-              @click="addToOrder(article)"
-            />
-          </div>
-        </div>
+          <q-btn
+            outline
+            padding="lg"
+            class="q-mr-sm q-mb-sm"
+            :icon="article.icon"
+            :label="article.name"
+            @click="addToOrder(article)"
+          />
+        </span>
       </div>
       <div class="col-6">
-        <div>
-          <q-toolbar class="bg-primary text-white shadow-2">
-            <q-toolbar-title>Order</q-toolbar-title>
+        <div v-show="orderArticles.length > 0">
+          <q-toolbar class="bg-light-green-9 text-white shadow-2">
+            <q-toolbar-title>Your Order</q-toolbar-title>
           </q-toolbar>
 
           <q-list bordered>
@@ -34,7 +36,7 @@
             >
               <q-item-section avatar>
                 <q-avatar
-                  color="primary"
+                  color="light-green-9"
                   text-color="white"
                   :icon="article.icon"
                 />
@@ -55,22 +57,36 @@
                   <q-btn
                     flat
                     icon="add_box"
+                    size="xl"
                     color="grey"
+                    @click="increaseOrderAmount(article)"
                   />
                   <q-btn
                     flat
                     icon="indeterminate_check_box"
+                    size="xl"
                     color="grey"
+                    @click="decreaseOrderAmount(article)"
                   />
                 </div>
               </q-item-section>
             </q-item>
           </q-list>
           <q-btn
-            v-show="orderArticles.length > 0"
+            push
             class="q-mt-sm"
+            color="light-green-9"
             label="Order"
+            size="xl"
             @click="sendOrder"
+          />
+          <q-btn
+            push
+            class="q-mt-sm q-ml-sm"
+            color="grey-6"
+            label="Cancel"
+            size="xl"
+            @click="cancelOrder"
           />
         </div>
       </div>
@@ -83,6 +99,9 @@ import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr'
 
 export default {
   name: 'CashPoint',
+  components: {
+    ConnectionStatusBar: () => import('../components/ConnectionStatusBar.vue')
+  },
   data () {
     return {
       articles: [],
@@ -92,7 +111,7 @@ export default {
   },
   async created () {
     this.connection = new HubConnectionBuilder()
-      .withUrl('https://localhost:5001/snackbar')
+      .withUrl('hub/order')
       .configureLogging(LogLevel.Information)
       .withAutomaticReconnect()
       .build()
@@ -124,15 +143,53 @@ export default {
         return
       }
 
-      const articleOrder = { id: article.id, name: article.name, amount: 1 }
+      const articleOrder = {
+        id: article.id,
+        name: article.name,
+        icon: article.icon,
+        amount: 1
+      }
+
       this.orderArticles.push(articleOrder)
     },
-    sendOrder () {
-      this.connection.invoke('CreateOrder', this.orderArticles).catch(function (err) {
-        return console.error(err.toString())
+    async sendOrder () {
+      try {
+        this.connection.invoke('CreateOrder', this.orderArticles)
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Order error',
+          group: false,
+          classes: 'text-h4'
+        })
+        return
+      }
+
+      this.$q.notify({
+        type: 'positive',
+        message: 'Order successful',
+        color: 'light-green-9',
+        group: false,
+        classes: 'text-h4'
       })
 
       this.orderArticles = []
+    },
+    cancelOrder () {
+      this.orderArticles = []
+    },
+    decreaseOrderAmount (article) {
+      article.amount--
+
+      if (article.amount === 0) {
+        const index = this.orderArticles.indexOf(article)
+        if (index > -1) {
+          this.orderArticles.splice(index, 1)
+        }
+      }
+    },
+    increaseOrderAmount (article) {
+      article.amount++
     }
   }
 }

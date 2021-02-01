@@ -57,7 +57,7 @@ namespace SnackBar.OrderService.WebApi
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<SnackBarHub>("/snackbar");
+                endpoints.MapHub<OrderHub>("hub/order");
             });
         }
     }
